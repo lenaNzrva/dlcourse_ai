@@ -118,12 +118,12 @@ class KNN:
             # TODO: Implement choosing best class based on k
             # nearest training samples
             idx = np.argpartition(dists[i], self.k)
-            n = 0
+            classes = []
             for arg_min in idx[:self.k]:
-                n += self.train_y[arg_min]
+                classes.append(self.train_y[arg_min])
                 
-            if n / self.k > 0.5:
-                pred[i] = True
+            pred[i] = max(classes, key=classes.count)
+
 
         return pred
 
@@ -140,10 +140,15 @@ class KNN:
            for every test sample
         '''
         num_test = dists.shape[0]
-        num_test = dists.shape[0]
         pred = np.zeros(num_test, np.int)
         for i in range(num_test):
             # TODO: Implement choosing best class based on k
             # nearest training samples
-            pass
+            idx = np.argpartition(dists[i], self.k)
+            classes = []
+            for arg_min in idx[:self.k]:
+                classes.append(self.train_y[arg_min])
+                
+            pred[i] = max(classes, key=classes.count)
+
         return pred
