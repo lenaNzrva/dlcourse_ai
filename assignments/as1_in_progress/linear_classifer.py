@@ -43,7 +43,7 @@ def cross_entropy_loss(probs, target_index):
     # raise Exception("Not implemented!")
 
 
-def softmax_with_cross_entropy(predictions, target_index):
+def softmax_with_cross_entropy(pred, target_index):
     '''
     Computes softmax and cross-entropy loss for model predictions,
     including the gradient
@@ -60,13 +60,28 @@ def softmax_with_cross_entropy(predictions, target_index):
     '''
     # TODO implement softmax with cross-entropy
     # Your final implementation shouldn't have any loops
-    dprediction = np.array([0,0,0])
+    predictions = pred.copy()
+    predictions -= np.max(predictions)
+    ##softmax_with_cross_entropy
+    px = 1
+    a = np.exp(predictions)
+    b = np.sum(a)
+    c = b**-1
+    d = a[target_index] * c
+
+    e = np.log(d)
+    cross_entropy_loss_result = -1*px*e
     
-    # predictions -= predictions.max()
-    softmax_result = np.exp(predictions)/sum(np.exp(predictions))
-    gt = np.zeros(softmax_result.shape[0])
-    gt[target_index] = 1
-    cross_entropy_loss_result = -1 * np.sum(np.log(softmax_result)*gt)
+    ##Gradient using back propagation algoritm
+    df = 1
+    de = df*-1
+    dd = de * (1/d)
+    dc = dd*a[target_index]
+    da_target = dd*c
+    db = dc*-1*(b**-2)
+    da = np.full((predictions.shape),db)
+    da[target_index] += dd*c
+    dprediction = da*a
     
     return cross_entropy_loss_result, dprediction
 

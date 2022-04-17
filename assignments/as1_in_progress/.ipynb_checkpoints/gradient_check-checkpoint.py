@@ -31,7 +31,6 @@ def check_gradient(f, x, delta=1e-5, tol = 1e-4):
     it = np.nditer(x, flags=['multi_index'], op_flags=['readwrite'])
     while not it.finished:
         ix = it.multi_index
-        ix = 1
         analytic_grad_at_ix = analytic_grad[ix]
         numeric_grad_at_ix = 0
 
