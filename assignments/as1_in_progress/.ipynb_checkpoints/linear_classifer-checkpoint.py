@@ -15,8 +15,12 @@ def softmax(predictions):
     '''
     # TODO implement softmax
     # Your final implementation shouldn't have any loops
-    predictions -= predictions.max()
-    softmax_result = np.exp(predictions)/sum(np.exp(predictions))
+    try:
+        predictions -= np.max(predictions, axis=1,keepdims=True)
+        softmax_result = np.exp(predictions) / np.sum(np.exp(predictions),axis = 1, keepdims=True)
+    except:
+        predictions -= np.max(predictions, keepdims=True)
+        softmax_result = np.exp(predictions)/sum(np.exp(predictions))
     return softmax_result
     # raise Exception("Not implemented!")
 
@@ -58,29 +62,62 @@ def softmax_with_cross_entropy(pred, target_index):
       loss, single value - cross-entropy loss
       dprediction, np array same shape as predictions - gradient of predictions by loss value
     '''
+
     # TODO implement softmax with cross-entropy
     # Your final implementation shouldn't have any loops
+    # Without batches
+#     px = 1
+#     a = np.exp(predictions)
+#     b = np.sum(a)
+#     c = b**-1
+#     d = a[target_index] * c
+
+#     e = np.log(d)
+#     cross_entropy_loss_result = -1*px*e
+    
+#     ##Gradient using back propagation algoritm
+#     df = 1
+#     de = df*-1
+#     dd = de * (1/d)
+#     dc = dd*a[target_index]
+#     da_target = dd*c
+#     db = dc*-1*(b**-2)
+#     da = np.full((predictions.shape),db)
+#     da[target_index] += dd*c
+#     dprediction = da*a
+    
+    # TODO implement softmax with cross-entropy
+    # Your final implementation shouldn't have any loops
+    # With batches
+    batch_size = target_index.shape[0]
+    num_classes = pred.shape[1]
+
     predictions = pred.copy()
-    predictions -= np.max(predictions)
-    ##softmax_with_cross_entropy
+    predictions -= np.max(predictions, axis=1,keepdims=True)
+
     px = 1
     a = np.exp(predictions)
-    b = np.sum(a)
+    b = np.sum(a, axis=1)
     c = b**-1
-    d = a[target_index] * c
-
+    list_a_target = np.array([a[i, target_index[i][0]] for i in range(batch_size)])
+    d = list_a_target * c 
     e = np.log(d)
-    cross_entropy_loss_result = -1*px*e
+    cross_entropy_loss = -1*px*e
+    cross_entropy_loss_result = np.mean(cross_entropy_loss)
     
-    ##Gradient using back propagation algoritm
+    
     df = 1
-    de = df*-1
+    dmean = batch_size/ (batch_size**2)
+    de = dmean*-1
     dd = de * (1/d)
-    dc = dd*a[target_index]
+    dc = dd*list_a_target
     da_target = dd*c
     db = dc*-1*(b**-2)
-    da = np.full((predictions.shape),db)
-    da[target_index] += dd*c
+    db = db.reshape((batch_size, 1))
+    da = np.full((batch_size, num_classes),db)
+    for i in range(batch_size):
+        da[i, target_index[i]] += (dd*c)[i]
+        
     dprediction = da*a
     
     return cross_entropy_loss_result, dprediction
