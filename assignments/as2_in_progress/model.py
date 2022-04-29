@@ -21,7 +21,6 @@ class TwoLayerNet:
         self.L1 = FullyConnectedLayer(n_input, hidden_layer_size)
         self.ReLu1 = ReLULayer()
         self.L2 = FullyConnectedLayer(hidden_layer_size, n_output)
-        # raise Exception("Not implemented!")
 
     def compute_loss_and_gradients(self, X, y):
         """
@@ -47,17 +46,21 @@ class TwoLayerNet:
         
         loss0, grad0 = softmax_with_cross_entropy(L2_result, y)
         
+        loss1, grad1 = l2_regularization(self.L1.W.value, self.reg)
+        loss2, grad2 = l2_regularization(self.L2.W.value, self.reg)
+        
         L2_grad = self.L2.backward(grad0)
         ReLu1_grad = self.ReLu1.backward(L2_grad)
         L1_grad = self.L1.backward(ReLu1_grad)
         
+        
         # After that, implement l2 regularization on all params
         # Hint: self.params() is useful again!
-        loss1, grad1 = l2_regularization(L1_result, self.reg)
-        loss2, grad2 = l2_regularization(L2_result, self.reg)
         
-        loss = loss0+loss1+loss2 
-        # raise Exception("Not implemented!")
+        self.L1.W.grad += grad1
+        self.L2.W.grad += grad2
+
+        loss = loss0+loss1+loss2
 
         return loss
 
@@ -74,13 +77,17 @@ class TwoLayerNet:
         # TODO: Implement predict
         # Hint: some of the code of the compute_loss_and_gradients
         # can be reused
-        pred = np.zeros(X.shape[0], np.int)
+        # pred = np.zeros(X.shape[0], np.int)
 
-        raise Exception("Not implemented!")
+        # raise Exception("Not implemented!")
+        L1 = (X@self.L1.W.value) + self.L1.B.value
+        L2 = (L1@self.L2.W.value) + self.L2.B.value
+        
+        pred = np.argmax(L2, axis=1)
         return pred
 
     def params(self):
         # TODO Implement aggregating all of the params
-        result = {"L1_W":self.L1.W, "L2_W":self.L2.W}
+        result = {"W1":self.L1.W, "B1":self.L1.B, "W2":self.L2.W, "B2":self.L2.B}
 
         return result
