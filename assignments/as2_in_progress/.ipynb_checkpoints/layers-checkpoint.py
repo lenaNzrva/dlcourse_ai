@@ -14,18 +14,14 @@ def l2_regularization(W, reg_strength):
       gradient, np.array same shape as W - gradient of weight by l2 loss
     """
     # TODO: Copy from the previous assignment
-    # raise Exception("Not implemented!")
-    a = W**2
-    b = np.sum(a)
-    loss = b*reg_strength
     
-    df = 1
-    dc = df*reg_strength
-    db = dc*1
-    grad = dc*(2*W)
+    #loss
+    loss = np.sum(W**2)*reg_strength
+    
+    #grad 
+    grad = 2*W*reg_strength
 
     return loss, grad
-    # return loss, grad
 
 
 def softmax_with_cross_entropy(pred, target_index):
@@ -44,11 +40,14 @@ def softmax_with_cross_entropy(pred, target_index):
       dprediction, np array same shape as predictions - gradient of predictions by loss value
     """
     # TODO: Copy from the previous assignment
-    batch_size = target_index.shape[0]
-    num_classes = pred.shape[1]
-
+    
+    #Normalization
     predictions = pred.copy()
     predictions -= np.max(predictions, axis=1,keepdims=True)
+    
+    #Softmax_with_cross_entropy
+    batch_size = target_index.shape[0]
+    num_classes = pred.shape[1]
 
     px = 1
     a = np.exp(predictions)
@@ -61,7 +60,7 @@ def softmax_with_cross_entropy(pred, target_index):
     h = np.sum(g)
     cross_entropy_loss_result = h/batch_size
     
-    
+    #Back propagation
     df = 1
     dh = batch_size/ (batch_size**2)
     dg = 1*dh
@@ -78,9 +77,6 @@ def softmax_with_cross_entropy(pred, target_index):
     dprediction = da*a
     
     return cross_entropy_loss_result, dprediction
-#     raise Exception("Not implemented!")
-
-#     return loss, d_preds
 
 
 class Param:
@@ -102,13 +98,12 @@ class ReLULayer:
         # TODO: Implement forward pass
         # Hint: you'll need to save some information about X
         # to use it later in the backward pass
+        
         self.X = X.copy()
         result = X.copy()
-        
         result[X<0] = 0
 
         return result
-        # raise Exception("Not implemented!")
 
     def backward(self, d_out):
         """
@@ -125,9 +120,11 @@ class ReLULayer:
         # TODO: Implement backward pass
         # Your final implementation shouldn't have any loops
         # raise Exception("Not implemented!")
+        
         ones = np.ones(self.X.shape)
         ones[self.X<0] = 0
         d_result = d_out*ones
+        
         return d_result
 
     def params(self):
