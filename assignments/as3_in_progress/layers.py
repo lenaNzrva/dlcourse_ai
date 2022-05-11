@@ -113,7 +113,8 @@ class ConvolutionalLayer:
 
 
     def forward(self, X):
-        batch_size, height, width, channels = X.shape
+        self.X = Param(X)
+        batch_size, height, width, channels = self.X.value.shape
         
         # TODO: Implement forward pass
         # Hint: setup variables that hold the result
@@ -128,12 +129,12 @@ class ConvolutionalLayer:
         
         # It's ok to use loops for going over width and height
         # but try to avoid having any other loops
-        W_flatten = self.W.value.reshape(filter_size*filter_size*channels, out_channels)
+        self.W_flatten = self.W.value.reshape(filter_size*filter_size*channels, out_channels)
         for y in range(out_height):
             for x in range(out_width):
                 # TODO: Implement forward pass for specific location
-                X_flatten = X[:,0:filter_size,0:filter_size,:].reshape((batch_size, filter_size*filter_size*out_channels))
-                result[:,y,x,:] = (X_flatten@W_flatten) + self.B.value
+                X_flatten = self.X.value[:,y:filter_size+y,x:filter_size+x,:].reshape((batch_size, filter_size*filter_size*channels))
+                result[:,y,x,:] = (X_flatten@self.W_flatten) + self.B.value
                 
         return result
 
@@ -144,23 +145,35 @@ class ConvolutionalLayer:
         # when you implemented FullyConnectedLayer
         # Just do it the same number of times and accumulate gradients
 
-        batch_size, height, width, channels = X.shape
+        batch_size, height, width, channels = self.X.value.shape
         _, out_height, out_width, out_channels = d_out.shape
 
         # TODO: Implement backward pass
         # Same as forward, setup variables of the right shape that
         # aggregate input gradient and fill them for every location
         # of the output
-
+        
+        self.B.grad = np.sum(d_out, axis=(0,1,2))
         # Try to avoid having any other loops here too
         for y in range(out_height):
             for x in range(out_width):
                 # TODO: Implement backward pass for specific location
                 # Aggregate gradients for both the input and
                 # the parameters (W and B)
-                pass
+                # pass
+                X_flatten = self.X.value[:,y:self.filter_size+y,x:self.filter_size+x,:].reshape((batch_size,
+                                                                                           self.filter_size*self.filter_size*channels))
+                ## 
+                db_da = d_out
+                da_dw_flatten = X_flatten.T @ db_da.reshape((db_da.shape[0], db_da.shape[1]*db_da.shape[2]*db_da.shape[3]))
+                self.W.grad  += da_dw_flatten.reshape(self.filter_size, self.filter_size, channels, out_channels)
+                
+                da_dx_flatten = db_da.reshape((db_da.shape[0], db_da.shape[1]*db_da.shape[2]*db_da.shape[3]))@self.W_flatten.T
+                self.X.grad += da_dx_flatten.reshape(batch_size, height, width, channels)
+                
+        return self.X.grad
 
-        raise Exception("Not implemented!")
+        # raise Exception("Not implemented!")
 
     def params(self):
         return { 'W': self.W, 'B': self.B }
