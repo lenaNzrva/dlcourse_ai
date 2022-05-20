@@ -121,11 +121,14 @@ class ConvolutionalLayer:
         # and one x/y location at a time in the loop below
         
         filter_size = self.filter_size
-        out_height = height - self.filter_size + 1
-        out_width = width - self.filter_size + 1
+        out_height = (height - self.filter_size + 1) + self.padding*2
+        out_width = (width - self.filter_size + 1) + self.padding*2
         out_channels = self.out_channels
         
         result = np.zeros((batch_size, out_height, out_width, out_channels), float)
+        color = np.full(channels, 0)
+        X_padding = np.full((batch_size,height+self.padding*2, width+self.padding*2, channels), color, dtype=np.int8)
+        X_padding[:,self.padding:height+self.padding, self.padding:width+self.padding] = X
         
         # It's ok to use loops for going over width and height
         # but try to avoid having any other loops
@@ -133,7 +136,7 @@ class ConvolutionalLayer:
         for y in range(out_height):
             for x in range(out_width):
                 # TODO: Implement forward pass for specific location
-                X_flatten = self.X.value[:,y:filter_size+y,x:filter_size+x,:].reshape((batch_size, filter_size*filter_size*channels))
+                X_flatten = X_padding[:,y:filter_size+y,x:filter_size+x,:].reshape((batch_size, filter_size*filter_size*channels))
                 result[:,y,x,:] = (X_flatten@self.W_flatten) + self.B.value
                 
         return result
