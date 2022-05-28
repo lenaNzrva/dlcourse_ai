@@ -34,8 +34,44 @@ def softmax_with_cross_entropy(predictions, target_index):
       loss, single value - cross-entropy loss
       dprediction, np array same shape as predictions - gradient of predictions by loss value
     '''
+    
+    pred = predictions.copy()
+    pred -= np.max(pred, axis=1,keepdims=True)
+    
+    #Softmax_with_cross_entropy
+    batch_size = target_index.shape[0]
+    num_classes = pred.shape[1]
+
+    px = 1
+    a = np.exp(pred)
+    b = np.sum(a, axis=1)
+    c = b**-1
+    list_a_target = np.array([a[i, target_index[i]] for i in range(batch_size)])
+    d = list_a_target * c 
+    e = np.log(d)
+    g = -1*px*e
+    h = np.sum(g)
+    cross_entropy_loss_result = h/batch_size
+    
+    #Back propagation
+    df = 1
+    dh = batch_size/ (batch_size**2)
+    dg = 1*dh
+    de = dg*-1
+    dd = de * (1/d)
+    dc = dd*list_a_target
+    da_target = dd*c
+    db = dc*-1*(b**-2)
+    db = db.reshape((batch_size, 1))
+    da = np.full((batch_size, num_classes),db)
+    for i in range(batch_size):
+        da[i, target_index[i]] += (dd*c)[i]
+        
+    dprediction = da*a
+    
+    return cross_entropy_loss_result, dprediction
     # TODO copy from the previous assignment
-    raise Exception("Not implemented!")
+    # raise Exception("Not implemented!")
     return loss, dprediction
 
 
@@ -199,16 +235,15 @@ class MaxPoolingLayer:
         self.X = X
         batch_size, height, width, channels = X.shape
         
-        height_out = int((height - self.pool_size)/self.stride + 1)
-        width_out = int((width - self.pool_size)/self.stride + 1)
-        self.X_pool = np.zeros((batch_size, height_out, width_out, channels))
+        self.height_out = int((height - self.pool_size)/self.stride + 1)
+        self.width_out = int((width - self.pool_size)/self.stride + 1)
+        self.X_pool = np.zeros((batch_size, self.height_out, self.width_out, channels))
 
         # TODO: Implement maxpool forward pass
         # Hint: Similarly to Conv layer, loop on
         # output x/y dimension
-        for y in range(height_out):
-            for x in range(width_out):
-                
+        for y in range(self.height_out):
+            for x in range(self.width_out):
                 self.X_pool[:, y, x, :] = np.max(X[:,(y*self.pool_size):(y*self.pool_size)+self.stride,
                                               (x*self.pool_size):(x*self.pool_size)+self.stride, :], axis=(1,2))
                 
@@ -218,9 +253,17 @@ class MaxPoolingLayer:
     def backward(self, d_out):
         grad_X = np.zeros_like(self.X)
         
-        indexes = np.where(self.X == self.X_pool)
-        grad_X[indexes] = d_out.reshape(-1)
-        
+        for y in range(self.height_out):
+            for x in range(self.height_out):
+                X_slice = self.X[:,(y*self.pool_size):(y*self.pool_size)+self.stride, 
+                                 (x*self.pool_size):(x*self.pool_size)+self.stride, :]
+                
+                d_out_slice = d_out[:,y,x, :][:,np.newaxis, np.newaxis,:]
+                
+                mask = (X_slice == np.amax(X_slice, (1, 2))[:, np.newaxis, np.newaxis, :])
+                grad_X[:,(y*self.pool_size):(y*self.pool_size)+self.stride, 
+                       (x*self.pool_size):(x*self.pool_size)+self.stride, :] += d_out_slice*mask
+
         return grad_X
 
     def params(self):
