@@ -34,10 +34,7 @@ class ConvNet:
         self.max_pool2 = MaxPoolingLayer(4,4)
         self.flattener = Flattener()
         self.layer3 = FullyConnectedLayer(conv2_channels, n_output_classes)
-        # TODO Create necessary layers
-        # raise Exception("Not implemented!")
-        
-        # return 0
+
 
     def compute_loss_and_gradients(self, X, y):
         """
@@ -57,10 +54,14 @@ class ConvNet:
         B3 = params["B3"]
         # Before running forward and backward pass through the model,
         # clear parameter gradients aggregated from the previous pass
+        
+        W1.grad = np.zeros_like(W1.value)
+        B1.grad = np.zeros_like(B1.value)
+        W2.grad = np.zeros_like(W2.value)
+        B2.grad = np.zeros_like(B2.value)
+        W3.grad = np.zeros_like(W3.value)
+        B3.grad = np.zeros_like(B3.value)
 
-        # TODO Compute loss and fill param gradients
-        # Don't worry about implementing L2 regularization, we will not
-        # need it in this assignment
         l1 = self.layer1.forward(X)
         r1 = self.relu1.forward(l1)
         m_p1 = self.max_pool1.forward(r1)
@@ -71,6 +72,7 @@ class ConvNet:
         l3 = self.layer3.forward(f)
         
         loss, grad = softmax_with_cross_entropy(l3, y)
+        
         g_l3 = self.layer3.backward(grad)
         g_f = self.flattener.backward(g_l3)
         g_m_p2 = self.max_pool2.backward(g_f)
@@ -80,16 +82,21 @@ class ConvNet:
         g_r1 = self.relu1.backward(g_m_p1)
         g_l1 = self.layer1.backward(g_r1)
         
-        
-        print(W1.grad.shape)
-        print(g_l1.shape)
-        
-        
         return loss
 
     def predict(self, X):
-        # You can probably copy the code from previous assignment
-        raise Exception("Not implemented!")
+        l1 = self.layer1.forward(X)
+        r1 = self.relu1.forward(l1)
+        m_p1 = self.max_pool1.forward(r1)
+        l2 = self.layer2.forward(m_p1)
+        r2 = self.relu2.forward(l2)
+        m_p2 = self.max_pool2.forward(r2)
+        f = self.flattener.forward(m_p2)
+        l3 = self.layer3.forward(f)
+    
+        pred = np.argmax(l3, 1)
+        return pred
+        
 
     def params(self):
         result = {"W1": self.layer1.params()["W"],
@@ -99,8 +106,5 @@ class ConvNet:
                  "W3": self.layer3.params()["W"],
                  "B3": self.layer3.params()["B"]}
 
-        # TODO: Aggregate all the params from all the layers
-        # which have parameters
-        # raise Exception("Not implemented!")
 
         return result
